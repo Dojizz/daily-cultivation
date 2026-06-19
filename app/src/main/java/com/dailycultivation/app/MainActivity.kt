@@ -7,9 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.dailycultivation.app.ui.home.HomeScreen
+import com.dailycultivation.app.ui.MainScreen
 import com.dailycultivation.app.ui.theme.DailyCultivationTheme
 import com.dailycultivation.app.viewmodel.HomeViewModel
+import com.dailycultivation.app.viewmodel.PracticeViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,19 +18,27 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DailyCultivationTheme {
-                val viewModel: HomeViewModel = viewModel()
-                val activeTasks by viewModel.activeTasks.collectAsStateWithLifecycle()
-                val completedTasks by viewModel.completedTasks.collectAsStateWithLifecycle()
-                val expiredTasks by viewModel.expiredTasks.collectAsStateWithLifecycle()
+                val taskVM: HomeViewModel = viewModel()
+                val practiceVM: PracticeViewModel = viewModel()
 
-                HomeScreen(
+                val activeTasks by taskVM.activeTasks.collectAsStateWithLifecycle()
+                val expiredTasks by taskVM.expiredTasks.collectAsStateWithLifecycle()
+                val todayState by practiceVM.todayState.collectAsStateWithLifecycle()
+                val allPractices by practiceVM.allPractices.collectAsStateWithLifecycle()
+
+                MainScreen(
                     activeTasks = activeTasks,
-                    completedTasks = completedTasks,
                     expiredTasks = expiredTasks,
-                    onAddTask = viewModel::addTask,
-                    onCompleteTask = viewModel::completeTask,
-                    onRestartTask = viewModel::restartTask,
-                    onDeleteTask = viewModel::deleteTask,
+                    onAddTask = taskVM::addTask,
+                    onCompleteTask = taskVM::completeTask,
+                    onRestartTask = taskVM::restartTask,
+                    todayState = todayState,
+                    allPractices = allPractices,
+                    onCheckIn = { practiceVM.checkIn() },
+                    onAddPractice = practiceVM::addPractice,
+                    onEditPractice = practiceVM::updatePractice,
+                    onToggleActive = practiceVM::toggleActive,
+                    onDeletePractice = practiceVM::deletePractice,
                 )
             }
         }

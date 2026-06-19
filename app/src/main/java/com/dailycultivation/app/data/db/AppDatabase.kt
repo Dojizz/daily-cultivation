@@ -4,17 +4,25 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.dailycultivation.app.data.dao.PracticeDao
 import com.dailycultivation.app.data.dao.TaskDao
+import com.dailycultivation.app.data.entity.PracticeEntity
+import com.dailycultivation.app.data.entity.PracticeRecordEntity
 import com.dailycultivation.app.data.entity.TaskEntity
 
 @Database(
-    entities = [TaskEntity::class],
-    version = 1,
+    entities = [
+        TaskEntity::class,
+        PracticeEntity::class,
+        PracticeRecordEntity::class,
+    ],
+    version = 2,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun taskDao(): TaskDao
+    abstract fun practiceDao(): PracticeDao
 
     companion object {
         @Volatile
@@ -26,7 +34,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "daily_cultivation.db"
-                ).build().also { INSTANCE = it }
+                )
+                    .fallbackToDestructiveMigration()
+                    .build().also { INSTANCE = it }
             }
         }
     }
