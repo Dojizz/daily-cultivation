@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dailycultivation.app.ui.MainScreen
 import com.dailycultivation.app.ui.theme.DailyCultivationTheme
 import com.dailycultivation.app.viewmodel.HomeViewModel
+import com.dailycultivation.app.viewmodel.JournalViewModel
 import com.dailycultivation.app.viewmodel.PracticeViewModel
 
 class MainActivity : ComponentActivity() {
@@ -20,11 +21,14 @@ class MainActivity : ComponentActivity() {
             DailyCultivationTheme {
                 val taskVM: HomeViewModel = viewModel()
                 val practiceVM: PracticeViewModel = viewModel()
+                val journalVM: JournalViewModel = viewModel()
 
                 val activeTasks by taskVM.activeTasks.collectAsStateWithLifecycle()
                 val expiredTasks by taskVM.expiredTasks.collectAsStateWithLifecycle()
                 val todayState by practiceVM.todayState.collectAsStateWithLifecycle()
                 val allPractices by practiceVM.allPractices.collectAsStateWithLifecycle()
+                val todayJournal by journalVM.todayJournal.collectAsStateWithLifecycle()
+                val allJournals by journalVM.allJournals.collectAsStateWithLifecycle()
 
                 MainScreen(
                     activeTasks = activeTasks,
@@ -39,6 +43,11 @@ class MainActivity : ComponentActivity() {
                     onEditPractice = practiceVM::updatePractice,
                     onToggleActive = practiceVM::toggleActive,
                     onDeletePractice = practiceVM::deletePractice,
+                    todayJournal = todayJournal,
+                    allJournals = allJournals,
+                    onSaveJournal = journalVM::saveToday,
+                    onUpdateJournal = journalVM::updateJournal,
+                    onDeleteJournal = journalVM::deleteJournal,
                 )
             }
         }

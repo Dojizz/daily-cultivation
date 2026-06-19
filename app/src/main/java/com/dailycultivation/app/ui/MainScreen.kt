@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -19,18 +20,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.dailycultivation.app.data.entity.JournalEntity
 import com.dailycultivation.app.data.entity.PracticeEntity
-import com.dailycultivation.app.data.entity.TaskEntity
 import com.dailycultivation.app.data.repository.TaskWithDeadline
 import com.dailycultivation.app.ui.home.TaskContent
+import com.dailycultivation.app.ui.journal.JournalContent
 import com.dailycultivation.app.ui.practice.PracticeContent
 import com.dailycultivation.app.ui.theme.Primary
 import com.dailycultivation.app.ui.theme.Tertiary
@@ -39,6 +38,7 @@ import com.dailycultivation.app.viewmodel.PracticeViewModel
 enum class Tab(val label: String) {
     TASKS("任务"),
     PRACTICE("日课"),
+    JOURNAL("日记"),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,6 +58,12 @@ fun MainScreen(
     onEditPractice: (PracticeEntity) -> Unit,
     onToggleActive: (Long, Boolean) -> Unit,
     onDeletePractice: (Long) -> Unit,
+    // 日记
+    todayJournal: JournalEntity?,
+    allJournals: List<JournalEntity>,
+    onSaveJournal: (String) -> Unit,
+    onUpdateJournal: (Long, String) -> Unit,
+    onDeleteJournal: (Long) -> Unit,
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val tab = Tab.entries[selectedTab]
@@ -96,16 +102,24 @@ fun MainScreen(
                         indicatorColor = Primary.copy(alpha = 0.12f),
                     ),
                 )
+                NavigationBarItem(
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
+                    icon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                    label = { Text("日记") },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Primary,
+                        selectedTextColor = Primary,
+                        indicatorColor = Primary.copy(alpha = 0.12f),
+                    ),
+                )
             }
         },
         floatingActionButton = {
             when (tab) {
-                Tab.TASKS -> AddTaskFab { taskTitle, taskDesc ->
-                    onAddTask(taskTitle, taskDesc)
-                }
-                Tab.PRACTICE -> AddPracticeFab { name, desc ->
-                    onAddPractice(name, desc)
-                }
+                Tab.TASKS -> AddTaskFab { title, desc -> onAddTask(title, desc) }
+                Tab.PRACTICE -> AddPracticeFab { name, desc -> onAddPractice(name, desc) }
+                Tab.JOURNAL -> { /* 日记无 FAB，直接在页面内编辑 */ }
             }
         },
     ) { padding ->
@@ -125,6 +139,13 @@ fun MainScreen(
                     onEditPractice = onEditPractice,
                     onToggleActive = onToggleActive,
                     onDeletePractice = onDeletePractice,
+                )
+                Tab.JOURNAL -> JournalContent(
+                    todayJournal = todayJournal,
+                    allJournals = allJournals,
+                    onSave = onSaveJournal,
+                    onUpdate = onUpdateJournal,
+                    onDelete = onDeleteJournal,
                 )
             }
         }

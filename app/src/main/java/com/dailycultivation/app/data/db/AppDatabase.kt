@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.dailycultivation.app.data.dao.JournalDao
 import com.dailycultivation.app.data.dao.PracticeDao
 import com.dailycultivation.app.data.dao.TaskDao
+import com.dailycultivation.app.data.entity.JournalEntity
 import com.dailycultivation.app.data.entity.PracticeEntity
 import com.dailycultivation.app.data.entity.PracticeRecordEntity
 import com.dailycultivation.app.data.entity.TaskEntity
@@ -15,14 +17,16 @@ import com.dailycultivation.app.data.entity.TaskEntity
         TaskEntity::class,
         PracticeEntity::class,
         PracticeRecordEntity::class,
+        JournalEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun taskDao(): TaskDao
     abstract fun practiceDao(): PracticeDao
+    abstract fun journalDao(): JournalDao
 
     companion object {
         @Volatile
