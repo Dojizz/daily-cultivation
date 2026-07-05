@@ -3,6 +3,7 @@ package com.dailycultivation.app.data.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.io.Serializable
 import java.util.Calendar
 
 @Entity(
@@ -16,7 +17,7 @@ data class JournalEntity(
     val content: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-) {
+) : Serializable {
     companion object {
         /**
          * 计算"今天"对应的日记日期。

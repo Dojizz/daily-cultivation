@@ -36,6 +36,7 @@ import com.dailycultivation.app.data.repository.TaskWithDeadline
 import com.dailycultivation.app.ui.backup.BackupListDialog
 import com.dailycultivation.app.ui.home.TaskContent
 import com.dailycultivation.app.ui.journal.JournalContent
+import com.dailycultivation.app.ui.journal.JournalEditorScreen
 import com.dailycultivation.app.ui.practice.PracticeContent
 import com.dailycultivation.app.ui.theme.Primary
 import com.dailycultivation.app.ui.theme.Tertiary
@@ -83,7 +84,28 @@ fun MainScreen(
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var showSettingsMenu by rememberSaveable { mutableStateOf(false) }
     var showBackupDialog by rememberSaveable { mutableStateOf(false) }
+    var editingJournal by rememberSaveable { mutableStateOf<JournalEntity?>(null) }
     val tab = Tab.entries[selectedTab]
+
+    // 日记编辑器全屏模式
+    if (tab == Tab.JOURNAL && editingJournal != null) {
+        val journal = editingJournal!!
+        JournalEditorScreen(
+            journal = journal,
+            isNew = journal.id == 0L,
+            onBack = { editingJournal = null },
+            onSave = { content ->
+                if (journal.id == 0L) onSaveJournal(content)
+                else onUpdateJournal(journal.id, content)
+                editingJournal = null
+            },
+            onDelete = {
+                onDeleteJournal(journal.id)
+                editingJournal = null
+            },
+        )
+        return
+    }
 
     Scaffold(
         topBar = {
@@ -166,7 +188,10 @@ fun MainScreen(
             when (tab) {
                 Tab.TASKS -> AddTaskFab { title, desc -> onAddTask(title, desc) }
                 Tab.PRACTICE -> AddPracticeFab { name, desc -> onAddPractice(name, desc) }
-                Tab.JOURNAL -> { /* 日记无 FAB，直接在页面内编辑 */ }
+                Tab.JOURNAL -> AddJournalFab {
+                    editingJournal = todayJournal
+                        ?: JournalEntity(date = JournalEntity.todayDate())
+                }
             }
         },
     ) { padding ->
@@ -190,9 +215,7 @@ fun MainScreen(
                 Tab.JOURNAL -> JournalContent(
                     todayJournal = todayJournal,
                     allJournals = allJournals,
-                    onSave = onSaveJournal,
-                    onUpdate = onUpdateJournal,
-                    onDelete = onDeleteJournal,
+                    onJournalClick = { editingJournal = it },
                 )
             }
         }
@@ -216,6 +239,17 @@ fun MainScreen(
                 },
             )
         }
+    }
+}
+
+@Composable
+private fun AddJournalFab(onClick: () -> Unit) {
+    FloatingActionButton(
+        onClick = onClick,
+        containerColor = Tertiary,
+        contentColor = MaterialTheme.colorScheme.onTertiary,
+    ) {
+        Icon(Icons.Default.Add, contentDescription = "写日记")
     }
 }
 
