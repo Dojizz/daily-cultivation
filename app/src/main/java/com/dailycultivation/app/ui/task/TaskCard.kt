@@ -126,7 +126,7 @@ fun TaskCard(
                             Icon(Icons.Default.Cancel, contentDescription = "终止")
                         }
                     }
-                    if (isExpired) {
+                    if (isExpired || isCancelled) {
                         IconButton(
                             onClick = onRestart,
                             colors = IconButtonDefaults.iconButtonColors(contentColor = Warning),

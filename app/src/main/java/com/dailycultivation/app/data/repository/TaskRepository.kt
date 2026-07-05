@@ -53,7 +53,7 @@ class TaskRepository(private val dao: TaskDao) {
         dao.updateStatus(id, TaskStatus.EXPIRED)
     }
 
-    /** 重启过期任务：重置创建时间，改回 pending */
+    /** 重启过期/终止任务：重置创建时间，改回 pending */
     suspend fun restartTask(id: Long) {
         val task = dao.getById(id) ?: return
         dao.update(
@@ -61,6 +61,7 @@ class TaskRepository(private val dao: TaskDao) {
                 createdAt = System.currentTimeMillis(),
                 status = TaskStatus.PENDING,
                 completedAt = null,
+                cancelledAt = null,
             )
         )
     }

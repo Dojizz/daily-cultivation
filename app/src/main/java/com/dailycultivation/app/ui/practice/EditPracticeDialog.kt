@@ -80,7 +80,7 @@ fun EditPracticeDialog(
                         onClick = { selectedType = PracticeType.HABIT },
                     )
                     Text(
-                        text = "习惯",
+                        text = "功课",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(end = 16.dp),
                     )
@@ -89,14 +89,14 @@ fun EditPracticeDialog(
                         onClick = { selectedType = PracticeType.VIRTUE },
                     )
                     Text(
-                        text = "特制",
+                        text = "特质",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
                 Text(
                     text = if (selectedType == PracticeType.HABIT)
-                        "习惯每天都会出现，需要记录投入时间"
-                    else "特制每天轮转，关注打卡即可",
+                        "功课每天都会出现，需要记录投入时间"
+                    else "特质每天轮转，关注打卡即可",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                     modifier = Modifier.padding(start = 4.dp),

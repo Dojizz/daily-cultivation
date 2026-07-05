@@ -68,7 +68,7 @@ fun PracticeContent(
         // ── 每日习惯 ──
         item {
             Text(
-                text = "每日习惯",
+                text = "每日功课",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 4.dp),
@@ -84,7 +84,7 @@ fun PracticeContent(
                     ),
                 ) {
                     Text(
-                        text = "还没有习惯\n点击 + 添加每日习惯",
+                        text = "还没有功课\n点击 + 添加每日功课",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                         textAlign = TextAlign.Center,
@@ -105,7 +105,7 @@ fun PracticeContent(
         item {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "今日特制",
+                text = "今日特质",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 4.dp),
@@ -127,7 +127,7 @@ fun PracticeContent(
                     ),
                 ) {
                     Text(
-                        text = "还没有特制日课\n点击 + 添加",
+                        text = "还没有特质日课\n点击 + 添加",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                         textAlign = TextAlign.Center,
@@ -372,8 +372,8 @@ private fun PracticeListItem(
                         else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                     )
                     val typeLabel = when (practice.type) {
-                        PracticeType.HABIT -> "习惯"
-                        PracticeType.VIRTUE -> "特制"
+                        PracticeType.HABIT -> "功课"
+                        PracticeType.VIRTUE -> "特质"
                     }
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(

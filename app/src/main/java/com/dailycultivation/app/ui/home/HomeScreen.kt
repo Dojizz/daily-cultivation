@@ -93,7 +93,7 @@ fun TaskContent(
                     isCancelled = true,
                     onComplete = {},
                     onCancel = {},
-                    onRestart = {},
+                    onRestart = { onRestartTask(task.id) },
                     onDelete = { deleteConfirmId = task.id },
                 )
             }
