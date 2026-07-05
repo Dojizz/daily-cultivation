@@ -27,6 +27,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val expiredTasks: StateFlow<List<TaskWithDeadline>> = repository.observeExpiredTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val cancelledTasks: StateFlow<List<TaskEntity>> = repository.observeCancelledTasks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     init {
         // 启动时标记过期任务
         viewModelScope.launch {
@@ -54,6 +57,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun restartTask(id: Long) {
         viewModelScope.launch {
             repository.restartTask(id)
+        }
+    }
+
+    fun cancelTask(id: Long) {
+        viewModelScope.launch {
+            repository.cancelTask(id)
         }
     }
 

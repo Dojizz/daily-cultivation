@@ -32,6 +32,11 @@ class TaskRepository(private val dao: TaskDao) {
         }
     }
 
+    /** 获取已终止任务 */
+    fun observeCancelledTasks(): Flow<List<TaskEntity>> {
+        return dao.observeByStatus(TaskStatus.CANCELLED)
+    }
+
     suspend fun addTask(title: String, description: String = ""): Long {
         val task = TaskEntity(
             title = title,
@@ -58,6 +63,11 @@ class TaskRepository(private val dao: TaskDao) {
                 completedAt = null,
             )
         )
+    }
+
+    suspend fun cancelTask(id: Long) {
+        val task = dao.getById(id) ?: return
+        dao.update(task.copy(status = TaskStatus.CANCELLED, cancelledAt = System.currentTimeMillis()))
     }
 
     suspend fun deleteTask(id: Long) {

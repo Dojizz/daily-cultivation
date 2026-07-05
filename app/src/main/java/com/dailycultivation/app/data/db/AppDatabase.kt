@@ -22,7 +22,7 @@ import com.dailycultivation.app.data.entity.TaskEntity
         PracticeRecordEntity::class,
         JournalEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 @TypeConverters(PracticeTypeConverter::class)
@@ -49,7 +49,7 @@ abstract class AppDatabase : RoomDatabase() {
                         AppDatabase::class.java,
                         "daily_cultivation.db"
                     )
-                        .addMigrations(MIGRATION_3_4)
+                        .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
                         // 禁止自动删库：缺少 Migration 时直接崩溃，强迫开发者写 Migration
                         .addCallback(object : Callback() {
                             override fun onOpen(db: SupportSQLiteDatabase) {
@@ -75,6 +75,10 @@ abstract class AppDatabase : RoomDatabase() {
         private val MIGRATION_3_4 = Migration(3, 4) { db ->
             db.execSQL("ALTER TABLE practices ADD COLUMN type TEXT NOT NULL DEFAULT 'VIRTUE'")
             db.execSQL("ALTER TABLE practice_records ADD COLUMN durationMinutes INTEGER NOT NULL DEFAULT 0")
+        }
+
+        private val MIGRATION_4_5 = Migration(4, 5) { db ->
+            db.execSQL("ALTER TABLE tasks ADD COLUMN cancelledAt INTEGER")
         }
     }
 }

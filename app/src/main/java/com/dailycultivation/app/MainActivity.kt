@@ -26,7 +26,9 @@ class MainActivity : ComponentActivity() {
                 val updateVM: UpdateViewModel = viewModel()
 
                 val activeTasks by taskVM.activeTasks.collectAsStateWithLifecycle()
+                val completedTasks by taskVM.completedTasks.collectAsStateWithLifecycle()
                 val expiredTasks by taskVM.expiredTasks.collectAsStateWithLifecycle()
+                val cancelledTasks by taskVM.cancelledTasks.collectAsStateWithLifecycle()
                 val todayState by practiceVM.todayState.collectAsStateWithLifecycle()
                 val habits by practiceVM.habits.collectAsStateWithLifecycle()
                 val allPractices by practiceVM.allPractices.collectAsStateWithLifecycle()
@@ -36,10 +38,14 @@ class MainActivity : ComponentActivity() {
 
                 MainScreen(
                     activeTasks = activeTasks,
+                    completedTasks = completedTasks,
                     expiredTasks = expiredTasks,
+                    cancelledTasks = cancelledTasks,
                     onAddTask = taskVM::addTask,
                     onCompleteTask = taskVM::completeTask,
+                    onCancelTask = taskVM::cancelTask,
                     onRestartTask = taskVM::restartTask,
+                    onDeleteTask = taskVM::deleteTask,
                     todayState = todayState,
                     habits = habits,
                     allPractices = allPractices,

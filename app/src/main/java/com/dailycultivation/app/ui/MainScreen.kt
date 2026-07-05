@@ -56,10 +56,14 @@ enum class Tab(val label: String) {
 fun MainScreen(
     // 任务
     activeTasks: List<TaskWithDeadline>,
+    completedTasks: List<com.dailycultivation.app.data.entity.TaskEntity>,
     expiredTasks: List<TaskWithDeadline>,
+    cancelledTasks: List<com.dailycultivation.app.data.entity.TaskEntity>,
     onAddTask: (String, String) -> Unit,
     onCompleteTask: (Long) -> Unit,
+    onCancelTask: (Long) -> Unit,
     onRestartTask: (Long) -> Unit,
+    onDeleteTask: (Long) -> Unit,
     // 日课
     todayState: PracticeViewModel.TodayState,
     habits: List<PracticeViewModel.HabitState>,
@@ -201,9 +205,13 @@ fun MainScreen(
             when (tab) {
                 Tab.TASKS -> TaskContent(
                     activeTasks = activeTasks,
+                    completedTasks = completedTasks,
                     expiredTasks = expiredTasks,
+                    cancelledTasks = cancelledTasks,
                     onCompleteTask = onCompleteTask,
+                    onCancelTask = onCancelTask,
                     onRestartTask = onRestartTask,
+                    onDeleteTask = onDeleteTask,
                 )
                 Tab.PRACTICE -> PracticeContent(
                     habits = habits,

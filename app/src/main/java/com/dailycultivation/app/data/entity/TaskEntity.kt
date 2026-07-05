@@ -12,12 +12,14 @@ data class TaskEntity(
     val createdAt: Long = System.currentTimeMillis(),
     val status: TaskStatus = TaskStatus.PENDING,
     val completedAt: Long? = null,
+    val cancelledAt: Long? = null,
 )
 
 enum class TaskStatus {
     PENDING,
     COMPLETED,
     EXPIRED,
+    CANCELLED,
 }
 
 /** 72 小时的毫秒数 */
