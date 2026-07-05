@@ -77,8 +77,9 @@ RELEASE_RESPONSE=$(curl -s -X POST \
         \"prerelease\": false
     }")
 
-RELEASE_ID=$(echo "$RELEASE_RESPONSE" | grep -o '"id": [0-9]*' | head -1 | grep -o '[0-9]*')
-UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | grep -o '"upload_url": "[^"]*"' | head -1 | sed 's/"upload_url": "//;s/"{?name,label}//;s/"//g')
+# 用 python3 精确解析 JSON
+RELEASE_ID=$(echo "$RELEASE_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+UPLOAD_URL=$(echo "$RELEASE_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['upload_url'].split('{')[0])")
 
 if [ -z "$RELEASE_ID" ] || [ -z "$UPLOAD_URL" ]; then
     echo "错误: 创建 Release 失败"
@@ -92,23 +93,25 @@ echo "✓ GitHub Release 已创建 (ID=$RELEASE_ID)"
 
 APK_NAME="daily-cultivation-v${VERSION_NAME}.apk"
 
-UPLOAD_RESPONSE=$(curl -s -X POST \
+UPLOAD_RESPONSE=$(curl -s --fail-with-body -X POST \
     -H "Accept: application/vnd.github+json" \
     -H "Authorization: Bearer $GITHUB_TOKEN" \
     -H "Content-Type: application/octet-stream" \
     "${UPLOAD_URL}?name=${APK_NAME}" \
-    --data-binary "@${APK_PATH}")
+    --data-binary "@${APK_PATH}" 2>&1)
 
-if echo "$UPLOAD_RESPONSE" | grep -q '"browser_download_url"'; then
+if echo "$UPLOAD_RESPONSE" | python3 -c "import sys,json; r=json.load(sys.stdin); print(r.get('browser_download_url',''))" 2>/dev/null | grep -q '^https'; then
+    DOWNLOAD_URL=$(echo "$UPLOAD_RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['browser_download_url'])")
     echo "✓ APK 已上传: $APK_NAME"
-    echo "  下载链接: $(echo "$UPLOAD_RESPONSE" | grep -o '"browser_download_url": "[^"]*"' | head -1 | sed 's/"browser_download_url": "//;s/"//g')"
+    echo "  下载: $DOWNLOAD_URL"
 else
     echo "错误: APK 上传失败"
     echo "$UPLOAD_RESPONSE"
     exit 1
 fi
+
 echo ""
 echo "═══════════════════════════════════════"
 echo "  Release $TAG 发布完成！"
-echo "  $TAG/releases/tag/$TAG"
+echo "  https://github.com/$OWNER/$REPO/releases/tag/$TAG"
 echo "═══════════════════════════════════════"
