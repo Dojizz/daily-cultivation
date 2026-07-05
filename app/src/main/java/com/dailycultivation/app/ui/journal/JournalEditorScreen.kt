@@ -41,16 +41,20 @@ import java.util.Locale
 fun JournalEditorScreen(
     journal: JournalEntity,
     isNew: Boolean,
-    onBack: () -> Unit,
-    onSave: (String) -> Unit,
+    onBack: (content: String) -> Unit,
     onDelete: () -> Unit,
 ) {
     var content by rememberSaveable { mutableStateOf(journal.content) }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
-    // 系统返回键
-    BackHandler { onBack() }
+    fun exit() {
+        focusManager.clearFocus()
+        onBack(content)
+    }
+
+    // 系统返回键 → 自动保存
+    BackHandler { exit() }
 
     Scaffold(
         topBar = {
@@ -59,10 +63,7 @@ fun JournalEditorScreen(
                     Text(formatFullDate(journal.date))
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        focusManager.clearFocus()
-                        onBack()
-                    }) {
+                    IconButton(onClick = { exit() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "返回",
@@ -71,15 +72,6 @@ fun JournalEditorScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = {
-                        focusManager.clearFocus()
-                        onSave(content)
-                    }) {
-                        Text(
-                            "保存",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                    }
                     if (!isNew) {
                         TextButton(onClick = onDelete) {
                             Text(

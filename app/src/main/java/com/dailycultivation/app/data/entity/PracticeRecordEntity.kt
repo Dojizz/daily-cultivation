@@ -11,4 +11,5 @@ data class PracticeRecordEntity(
     val practiceId: Long,
     val date: Long,  // 当天零点的时间戳
     val note: String = "",
+    val durationMinutes: Int = 0,  // 习惯投入时长（分钟）
 )

@@ -12,5 +12,6 @@ data class PracticeEntity(
     val description: String = "",
     val sortOrder: Int = 0,
     val isActive: Boolean = true,
+    val type: PracticeType = PracticeType.VIRTUE,
     val createdAt: Long = System.currentTimeMillis(),
 )

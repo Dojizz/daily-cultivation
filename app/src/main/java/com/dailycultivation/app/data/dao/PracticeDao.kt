@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.dailycultivation.app.data.entity.PracticeEntity
 import com.dailycultivation.app.data.entity.PracticeRecordEntity
+import com.dailycultivation.app.data.entity.PracticeType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -26,11 +27,17 @@ interface PracticeDao {
     @Query("SELECT * FROM practices ORDER BY sortOrder ASC")
     fun observeAllPractices(): Flow<List<PracticeEntity>>
 
+    @Query("SELECT * FROM practices WHERE isActive = 1 AND type = :type ORDER BY sortOrder ASC")
+    fun observeActiveByType(type: String): Flow<List<PracticeEntity>>
+
     @Query("SELECT * FROM practices WHERE id = :id")
     suspend fun getPracticeById(id: Long): PracticeEntity?
 
     @Query("SELECT COUNT(*) FROM practices WHERE isActive = 1")
     suspend fun getActiveCount(): Int
+
+    @Query("SELECT COUNT(*) FROM practices WHERE isActive = 1 AND type = :type")
+    suspend fun getActiveCountByType(type: String): Int
 
     // ── 日课记录 ──
 

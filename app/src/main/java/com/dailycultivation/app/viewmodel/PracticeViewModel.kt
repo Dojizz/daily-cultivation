@@ -1,14 +1,17 @@
 package com.dailycultivation.app.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.dailycultivation.app.data.db.AppDatabase
 import com.dailycultivation.app.data.entity.PracticeEntity
 import com.dailycultivation.app.data.entity.PracticeRecordEntity
+import com.dailycultivation.app.data.entity.PracticeType
 import com.dailycultivation.app.data.repository.PracticeRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -21,7 +24,6 @@ class PracticeViewModel(application: Application) : AndroidViewModel(application
         AppDatabase.getInstance(application).practiceDao()
     )
 
-    /** 用于计算每日轮转的基准日 */
     private val rotationEpochMs: Long = Calendar.getInstance().apply {
         set(Calendar.YEAR, 2026)
         set(Calendar.MONTH, Calendar.JUNE)
@@ -32,21 +34,51 @@ class PracticeViewModel(application: Application) : AndroidViewModel(application
         set(Calendar.MILLISECOND, 0)
     }.timeInMillis
 
-    val allPractices: StateFlow<List<PracticeEntity>> = repository.observeAllPractices()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    /** 今日记录（用于 combine） */
+    private val todayRecords = repository.observeTodayRecords()
+
+    // ── 习惯 ──
+
+    data class HabitState(
+        val practice: PracticeEntity,
+        val record: PracticeRecordEntity? = null,
+        val isCheckedIn: Boolean = false,
+        val durationMinutes: Int = 0,
+    )
+
+    val habits: StateFlow<List<HabitState>> = combine(
+        repository.observeAllHabits(),
+        todayRecords,
+    ) { allHabits, records ->
+        Log.d(TAG, "habits combine: allHabits.size=${allHabits.size}, records.size=${records.size}")
+        allHabits.map { habit ->
+            val record = records.firstOrNull { it.practiceId == habit.id }
+            HabitState(
+                practice = habit,
+                record = record,
+                isCheckedIn = record != null,
+                durationMinutes = record?.durationMinutes ?: 0,
+            )
+        }
+    }.catch { e ->
+        Log.e(TAG, "habits Flow 崩溃", e)
+        emit(emptyList())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // ── 特制 ──
 
     data class TodayState(
         val practice: PracticeEntity? = null,
         val record: PracticeRecordEntity? = null,
         val isCheckedIn: Boolean = false,
-        val note: String = "",
     )
 
     val todayState: StateFlow<TodayState> = combine(
-        repository.observeAllPractices(),
-        repository.observeTodayRecords(),
-    ) { practices, records ->
-        val active = practices.filter { it.isActive }.sortedBy { it.sortOrder }
+        repository.observeAllVirtues(),
+        todayRecords,
+    ) { virtues, records ->
+        Log.d(TAG, "todayState combine: virtues.size=${virtues.size}, records.size=${records.size}")
+        val active = virtues.sortedBy { it.sortOrder }
         if (active.isEmpty()) {
             TodayState()
         } else {
@@ -58,21 +90,44 @@ class PracticeViewModel(application: Application) : AndroidViewModel(application
                 practice = practice,
                 record = record,
                 isCheckedIn = record != null,
-                note = record?.note ?: "",
             )
         }
+    }.catch { e ->
+        Log.e(TAG, "todayState Flow 崩溃", e)
+        emit(TodayState())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TodayState())
 
-    fun checkIn(note: String = "") {
+    val allPractices: StateFlow<List<PracticeEntity>> = repository.observeAllPractices()
+        .catch { e ->
+            Log.e(TAG, "allPractices Flow 崩溃", e)
+            emit(emptyList())
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    companion object {
+        private const val TAG = "PracticeViewModel"
+    }
+
+    // ── 操作 ──
+
+    /** 习惯打卡 */
+    fun checkInHabit(practiceId: Long, durationMinutes: Int) {
         viewModelScope.launch {
-            val practice = todayState.value.practice ?: return@launch
-            repository.checkIn(practice.id, note)
+            repository.checkIn(practiceId, durationMinutes = durationMinutes)
         }
     }
 
-    fun addPractice(name: String, description: String = "") {
+    /** 特制打卡 */
+    fun checkInVirtue() {
         viewModelScope.launch {
-            repository.addPractice(name, description)
+            val practice = todayState.value.practice ?: return@launch
+            repository.checkIn(practice.id)
+        }
+    }
+
+    fun addPractice(name: String, description: String = "", type: PracticeType = PracticeType.VIRTUE) {
+        viewModelScope.launch {
+            repository.addPractice(name, description, type)
         }
     }
 

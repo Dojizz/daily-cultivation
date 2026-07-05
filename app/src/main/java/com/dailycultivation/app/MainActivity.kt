@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
                 val activeTasks by taskVM.activeTasks.collectAsStateWithLifecycle()
                 val expiredTasks by taskVM.expiredTasks.collectAsStateWithLifecycle()
                 val todayState by practiceVM.todayState.collectAsStateWithLifecycle()
+                val habits by practiceVM.habits.collectAsStateWithLifecycle()
                 val allPractices by practiceVM.allPractices.collectAsStateWithLifecycle()
                 val todayJournal by journalVM.todayJournal.collectAsStateWithLifecycle()
                 val allJournals by journalVM.allJournals.collectAsStateWithLifecycle()
@@ -40,9 +41,11 @@ class MainActivity : ComponentActivity() {
                     onCompleteTask = taskVM::completeTask,
                     onRestartTask = taskVM::restartTask,
                     todayState = todayState,
+                    habits = habits,
                     allPractices = allPractices,
-                    onCheckIn = { practiceVM.checkIn() },
-                    onAddPractice = practiceVM::addPractice,
+                    onCheckInVirtue = practiceVM::checkInVirtue,
+                    onCheckInHabit = practiceVM::checkInHabit,
+                    onAddPractice = { name, desc, type -> practiceVM.addPractice(name, desc, type) },
                     onEditPractice = practiceVM::updatePractice,
                     onToggleActive = practiceVM::toggleActive,
                     onDeletePractice = practiceVM::deletePractice,

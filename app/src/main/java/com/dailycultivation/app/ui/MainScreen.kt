@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.dailycultivation.app.data.entity.JournalEntity
 import com.dailycultivation.app.data.entity.PracticeEntity
+import com.dailycultivation.app.data.entity.PracticeType
 import com.dailycultivation.app.data.network.ReleaseInfo
 import com.dailycultivation.app.data.repository.TaskWithDeadline
 import com.dailycultivation.app.ui.backup.BackupListDialog
@@ -61,9 +62,11 @@ fun MainScreen(
     onRestartTask: (Long) -> Unit,
     // 日课
     todayState: PracticeViewModel.TodayState,
+    habits: List<PracticeViewModel.HabitState>,
     allPractices: List<PracticeEntity>,
-    onCheckIn: () -> Unit,
-    onAddPractice: (String, String) -> Unit,
+    onCheckInVirtue: () -> Unit,
+    onCheckInHabit: (Long, Int) -> Unit,
+    onAddPractice: (String, String, PracticeType) -> Unit,
     onEditPractice: (PracticeEntity) -> Unit,
     onToggleActive: (Long, Boolean) -> Unit,
     onDeletePractice: (Long) -> Unit,
@@ -93,8 +96,7 @@ fun MainScreen(
         JournalEditorScreen(
             journal = journal,
             isNew = journal.id == 0L,
-            onBack = { editingJournal = null },
-            onSave = { content ->
+            onBack = { content ->
                 if (journal.id == 0L) onSaveJournal(content)
                 else onUpdateJournal(journal.id, content)
                 editingJournal = null
@@ -187,7 +189,7 @@ fun MainScreen(
         floatingActionButton = {
             when (tab) {
                 Tab.TASKS -> AddTaskFab { title, desc -> onAddTask(title, desc) }
-                Tab.PRACTICE -> AddPracticeFab { name, desc -> onAddPractice(name, desc) }
+                Tab.PRACTICE -> AddPracticeFab { name, desc, type -> onAddPractice(name, desc, type) }
                 Tab.JOURNAL -> AddJournalFab {
                     editingJournal = todayJournal
                         ?: JournalEntity(date = JournalEntity.todayDate())
@@ -204,9 +206,11 @@ fun MainScreen(
                     onRestartTask = onRestartTask,
                 )
                 Tab.PRACTICE -> PracticeContent(
+                    habits = habits,
                     todayState = todayState,
                     allPractices = allPractices,
-                    onCheckIn = onCheckIn,
+                    onCheckInHabit = onCheckInHabit,
+                    onCheckInVirtue = onCheckInVirtue,
                     onAddPractice = onAddPractice,
                     onEditPractice = onEditPractice,
                     onToggleActive = onToggleActive,
@@ -277,7 +281,7 @@ private fun AddTaskFab(onAddTask: (String, String) -> Unit) {
 }
 
 @Composable
-private fun AddPracticeFab(onAddPractice: (String, String) -> Unit) {
+private fun AddPracticeFab(onAddPractice: (String, String, PracticeType) -> Unit) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
 
     FloatingActionButton(
@@ -292,8 +296,8 @@ private fun AddPracticeFab(onAddPractice: (String, String) -> Unit) {
         com.dailycultivation.app.ui.practice.EditPracticeDialog(
             practice = null,
             onDismiss = { showDialog = false },
-            onConfirm = { name, desc ->
-                onAddPractice(name, desc)
+            onConfirm = { name, desc, type ->
+                onAddPractice(name, desc, type)
                 showDialog = false
             },
         )

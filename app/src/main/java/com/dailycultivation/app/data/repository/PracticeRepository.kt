@@ -3,6 +3,7 @@ package com.dailycultivation.app.data.repository
 import com.dailycultivation.app.data.dao.PracticeDao
 import com.dailycultivation.app.data.entity.PracticeEntity
 import com.dailycultivation.app.data.entity.PracticeRecordEntity
+import com.dailycultivation.app.data.entity.PracticeType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import java.util.Calendar
@@ -27,13 +28,26 @@ class PracticeRepository(private val dao: PracticeDao) {
 
     fun observeAllPractices(): Flow<List<PracticeEntity>> = dao.observeAllPractices()
 
-    suspend fun addPractice(name: String, description: String = ""): Long {
+    /** 获取所有活跃的习惯（HABIT），每天都会出现 */
+    fun observeAllHabits(): Flow<List<PracticeEntity>> =
+        dao.observeActiveByType(PracticeType.HABIT.name)
+
+    /** 获取所有活跃的特质（VIRTUE），用于轮转 */
+    fun observeAllVirtues(): Flow<List<PracticeEntity>> =
+        dao.observeActiveByType(PracticeType.VIRTUE.name)
+
+    suspend fun addPractice(
+        name: String,
+        description: String = "",
+        type: PracticeType = PracticeType.VIRTUE,
+    ): Long {
         val maxOrder = dao.observeAllPractices().first().maxOfOrNull { it.sortOrder } ?: -1
         return dao.insertPractice(
             PracticeEntity(
                 name = name,
                 description = description,
                 sortOrder = maxOrder + 1,
+                type = type,
             )
         )
     }
@@ -46,12 +60,11 @@ class PracticeRepository(private val dao: PracticeDao) {
         dao.deletePractice(id)
     }
 
-    // ── 每日轮转 ──
+    // ── 特制轮转 ──
 
-    /** 计算今天的日课索引（在活跃日课列表中的位置） */
+    /** 计算今天轮转到的特质（仅 VIRTUE 类型） */
     suspend fun getTodayPractice(): PracticeEntity? {
-        val activeList = dao.observeAllPractices().first()
-            .filter { it.isActive }
+        val activeList = dao.observeActiveByType(PracticeType.VIRTUE.name).first()
             .sortedBy { it.sortOrder }
         if (activeList.isEmpty()) return null
 
@@ -67,17 +80,28 @@ class PracticeRepository(private val dao: PracticeDao) {
         return dao.getRecord(practiceId, getTodayStartMs())
     }
 
-    suspend fun checkIn(practiceId: Long, note: String = "") {
+    /** 打卡：特制用 note，习惯用 durationMinutes */
+    suspend fun checkIn(
+        practiceId: Long,
+        note: String = "",
+        durationMinutes: Int = 0,
+    ) {
         val today = getTodayStartMs()
         val existing = dao.getRecord(practiceId, today)
         if (existing != null) {
-            dao.updateRecord(existing.copy(note = note))
+            dao.updateRecord(
+                existing.copy(
+                    note = note,
+                    durationMinutes = durationMinutes,
+                )
+            )
         } else {
             dao.insertRecord(
                 PracticeRecordEntity(
                     practiceId = practiceId,
                     date = today,
                     note = note,
+                    durationMinutes = durationMinutes,
                 )
             )
         }
