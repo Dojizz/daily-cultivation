@@ -72,3 +72,4 @@ daily-cultivation/
 - 新增数据模型时同步写 Room migration（如果已有发布版本）
 - Compose 预览函数用 `@Preview` 标注，方便 UI 调试
 - 不做 premature optimization —— 功能先跑通，再考虑性能
+- **每完成一个主要功能**：主动询问用户是否认可，确认后执行 `git commit`，并 `git push` 同步到远程仓库

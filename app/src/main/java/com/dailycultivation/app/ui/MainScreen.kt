@@ -7,9 +7,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -27,13 +31,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.dailycultivation.app.data.entity.JournalEntity
 import com.dailycultivation.app.data.entity.PracticeEntity
+import com.dailycultivation.app.data.network.ReleaseInfo
 import com.dailycultivation.app.data.repository.TaskWithDeadline
+import com.dailycultivation.app.ui.backup.BackupListDialog
 import com.dailycultivation.app.ui.home.TaskContent
 import com.dailycultivation.app.ui.journal.JournalContent
 import com.dailycultivation.app.ui.practice.PracticeContent
 import com.dailycultivation.app.ui.theme.Primary
 import com.dailycultivation.app.ui.theme.Tertiary
+import com.dailycultivation.app.ui.update.UpdateDialog
 import com.dailycultivation.app.viewmodel.PracticeViewModel
+import com.dailycultivation.app.viewmodel.UpdateUiState
 
 enum class Tab(val label: String) {
     TASKS("任务"),
@@ -64,14 +72,53 @@ fun MainScreen(
     onSaveJournal: (String) -> Unit,
     onUpdateJournal: (Long, String) -> Unit,
     onDeleteJournal: (Long) -> Unit,
+    // 更新
+    updateState: UpdateUiState,
+    onCheckUpdate: () -> Unit,
+    onDownloadUpdate: (ReleaseInfo) -> Unit,
+    onInstallUpdate: () -> Unit,
+    onDismissUpdate: () -> Unit,
+    onRestartApp: () -> Unit,
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var showSettingsMenu by rememberSaveable { mutableStateOf(false) }
+    var showBackupDialog by rememberSaveable { mutableStateOf(false) }
     val tab = Tab.entries[selectedTab]
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(tab.label) },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showSettingsMenu = true }) {
+                            Icon(
+                                Icons.Default.Settings,
+                                contentDescription = "设置",
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showSettingsMenu,
+                            onDismissRequest = { showSettingsMenu = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("检查更新") },
+                                onClick = {
+                                    showSettingsMenu = false
+                                    onCheckUpdate()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("恢复备份") },
+                                onClick = {
+                                    showSettingsMenu = false
+                                    showBackupDialog = true
+                                },
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -148,6 +195,26 @@ fun MainScreen(
                     onDelete = onDeleteJournal,
                 )
             }
+        }
+
+        if (updateState !is UpdateUiState.Idle) {
+            UpdateDialog(
+                state = updateState,
+                onDownload = onDownloadUpdate,
+                onInstall = onInstallUpdate,
+                onDismiss = onDismissUpdate,
+                onRetry = onCheckUpdate,
+            )
+        }
+
+            if (showBackupDialog) {
+            BackupListDialog(
+                onDismiss = { showBackupDialog = false },
+                onRestored = {
+                    showBackupDialog = false
+                    onRestartApp()
+                },
+            )
         }
     }
 }

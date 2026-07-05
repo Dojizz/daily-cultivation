@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.dailycultivation.app.data.dao.JournalDao
 import com.dailycultivation.app.data.dao.PracticeDao
 import com.dailycultivation.app.data.dao.TaskDao
@@ -34,13 +35,36 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "daily_cultivation.db"
-                )
-                    .fallbackToDestructiveMigration()
-                    .build().also { INSTANCE = it }
+                INSTANCE ?: run {
+                    val appContext = context.applicationContext
+
+                    // 在打开数据库之前自动备份，防止 migration 失败导致数据丢失
+                    DatabaseBackupManager.autoBackup(appContext)
+
+                    Room.databaseBuilder(
+                        appContext,
+                        AppDatabase::class.java,
+                        "daily_cultivation.db"
+                    )
+                        // 禁止自动删库：缺少 Migration 时直接崩溃，强迫开发者写 Migration
+                        .addCallback(object : Callback() {
+                            override fun onOpen(db: SupportSQLiteDatabase) {
+                                super.onOpen(db)
+                                // Room 成功打开后，补全备份元数据中的 dbVersion
+                                DatabaseBackupManager.updateLatestBackupMetadata(
+                                    appContext, db.version
+                                )
+                            }
+                        })
+                        .build().also { INSTANCE = it }
+                }
+            }
+        }
+
+        fun closeInstance() {
+            synchronized(this) {
+                INSTANCE?.close()
+                INSTANCE = null
             }
         }
     }

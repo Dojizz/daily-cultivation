@@ -12,6 +12,7 @@ import com.dailycultivation.app.ui.theme.DailyCultivationTheme
 import com.dailycultivation.app.viewmodel.HomeViewModel
 import com.dailycultivation.app.viewmodel.JournalViewModel
 import com.dailycultivation.app.viewmodel.PracticeViewModel
+import com.dailycultivation.app.viewmodel.UpdateViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,6 +23,7 @@ class MainActivity : ComponentActivity() {
                 val taskVM: HomeViewModel = viewModel()
                 val practiceVM: PracticeViewModel = viewModel()
                 val journalVM: JournalViewModel = viewModel()
+                val updateVM: UpdateViewModel = viewModel()
 
                 val activeTasks by taskVM.activeTasks.collectAsStateWithLifecycle()
                 val expiredTasks by taskVM.expiredTasks.collectAsStateWithLifecycle()
@@ -29,6 +31,7 @@ class MainActivity : ComponentActivity() {
                 val allPractices by practiceVM.allPractices.collectAsStateWithLifecycle()
                 val todayJournal by journalVM.todayJournal.collectAsStateWithLifecycle()
                 val allJournals by journalVM.allJournals.collectAsStateWithLifecycle()
+                val updateState by updateVM.uiState.collectAsStateWithLifecycle()
 
                 MainScreen(
                     activeTasks = activeTasks,
@@ -48,6 +51,12 @@ class MainActivity : ComponentActivity() {
                     onSaveJournal = journalVM::saveToday,
                     onUpdateJournal = journalVM::updateJournal,
                     onDeleteJournal = journalVM::deleteJournal,
+                    updateState = updateState,
+                    onCheckUpdate = updateVM::checkUpdate,
+                    onDownloadUpdate = updateVM::downloadUpdate,
+                    onInstallUpdate = updateVM::installApk,
+                    onDismissUpdate = updateVM::resetState,
+                    onRestartApp = { finishAffinity() },
                 )
             }
         }
