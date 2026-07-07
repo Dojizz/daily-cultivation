@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class PracticeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = PracticeRepository(
