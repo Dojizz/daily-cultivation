@@ -9,10 +9,13 @@ import com.dailycultivation.app.data.entity.PracticeEntity
 import com.dailycultivation.app.data.entity.PracticeRecordEntity
 import com.dailycultivation.app.data.entity.PracticeType
 import com.dailycultivation.app.data.repository.PracticeRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -34,8 +37,15 @@ class PracticeViewModel(application: Application) : AndroidViewModel(application
         set(Calendar.MILLISECOND, 0)
     }.timeInMillis
 
-    /** 今日记录（用于 combine） */
-    private val todayRecords = repository.observeTodayRecords()
+    /** 今日记录（每分钟刷新日期，确保跨天自动切换） */
+    private val todayRecords = flow {
+        while (true) {
+            emit(PracticeRepository.getTodayStartMs())
+            delay(60_000L)
+        }
+    }.flatMapLatest { date ->
+        repository.observeRecordsForDate(date)
+    }
 
     // ── 习惯 ──
 

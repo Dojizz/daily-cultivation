@@ -4,8 +4,10 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.dailycultivation.app.data.db.AppDatabase
+import com.dailycultivation.app.data.entity.DEADLINE_DURATION_MS
 import com.dailycultivation.app.data.entity.TaskEntity
 import com.dailycultivation.app.data.entity.TaskStatus
+import com.dailycultivation.app.data.entity.TaskType
 import com.dailycultivation.app.data.repository.TaskRepository
 import com.dailycultivation.app.data.repository.TaskWithDeadline
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,7 +20,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getInstance(application)
     private val repository = TaskRepository(db.taskDao())
 
-    val activeTasks: StateFlow<List<TaskWithDeadline>> = repository.observeActiveTasks()
+    val activeShortTasks: StateFlow<List<TaskWithDeadline>> = repository.observeActiveShortTermTasks()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val activeLongTasks: StateFlow<List<TaskWithDeadline>> = repository.observeActiveLongTermTasks()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val completedTasks: StateFlow<List<TaskEntity>> = repository.observeCompletedTasks()
@@ -31,20 +36,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
-        // 启动时标记过期任务
+        // 启动时只对短期任务做自动过期检查
         viewModelScope.launch {
-            val pending = db.taskDao().observeByStatus(TaskStatus.PENDING)
+            val pending = db.taskDao().observeByStatusAndType(TaskStatus.PENDING, TaskType.SHORT_TERM)
             pending.collect { tasks ->
                 val now = System.currentTimeMillis()
-                tasks.filter { it.createdAt + com.dailycultivation.app.data.entity.DEADLINE_DURATION_MS < now }
+                tasks.filter { it.createdAt + DEADLINE_DURATION_MS < now }
                     .forEach { db.taskDao().updateStatus(it.id, TaskStatus.EXPIRED) }
             }
         }
     }
 
-    fun addTask(title: String, description: String = "") {
+    fun addTask(title: String, description: String = "", taskType: TaskType = TaskType.SHORT_TERM) {
         viewModelScope.launch {
-            repository.addTask(title, description)
+            repository.addTask(title, description, taskType)
         }
     }
 

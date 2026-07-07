@@ -33,6 +33,7 @@ import com.dailycultivation.app.data.entity.DEADLINE_DURATION_MS
 import com.dailycultivation.app.data.entity.TaskEntity
 import com.dailycultivation.app.ui.theme.Expired
 import com.dailycultivation.app.ui.theme.Normal
+import com.dailycultivation.app.ui.theme.Primary
 import com.dailycultivation.app.ui.theme.Urgent
 import com.dailycultivation.app.ui.theme.Warning
 import kotlinx.coroutines.delay
@@ -47,18 +48,20 @@ fun TaskCard(
     isExpired: Boolean = false,
     isCompleted: Boolean = false,
     isCancelled: Boolean = false,
+    isLongTerm: Boolean = false,
     onComplete: () -> Unit,
     onCancel: () -> Unit,
     onRestart: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // 每秒更新一次倒计时（仅活跃任务）
+    // 每秒更新一次倒计时（仅活跃短期任务）
+    val isActive = !isExpired && !isCompleted && !isCancelled
     var tick by remember { mutableLongStateOf(remainingMs) }
 
     LaunchedEffect(remainingMs) {
         tick = remainingMs
-        if (!isExpired && !isCompleted && !isCancelled && tick > 0) {
+        if (isActive && !isLongTerm && tick > 0) {
             while (tick > 0) {
                 delay(1000L)
                 tick -= 1000L
@@ -66,13 +69,14 @@ fun TaskCard(
         }
     }
 
-    val progress = if (isExpired || isCompleted || isCancelled) 1f
+    val progress = if (isExpired || isCompleted || isCancelled || isLongTerm) 1f
     else (1f - tick.toFloat() / DEADLINE_DURATION_MS).coerceIn(0f, 1f)
 
     val accentColor = when {
         isCompleted -> Normal
         isCancelled -> MaterialTheme.colorScheme.outline
         isExpired -> Expired
+        isLongTerm -> Primary
         tick <= 6 * 60 * 60 * 1000L -> Urgent
         tick <= 24 * 60 * 60 * 1000L -> Warning
         else -> Normal
@@ -85,6 +89,7 @@ fun TaskCard(
                 isCompleted -> Normal.copy(alpha = 0.06f)
                 isCancelled -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                 isExpired -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                isLongTerm -> Primary.copy(alpha = 0.04f)
                 else -> MaterialTheme.colorScheme.surface
             },
         ),
@@ -103,6 +108,7 @@ fun TaskCard(
                         isCancelled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                         isCompleted -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         isExpired -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        isLongTerm -> Primary
                         else -> MaterialTheme.colorScheme.onSurface
                     },
                     modifier = Modifier.weight(1f),
@@ -163,11 +169,12 @@ fun TaskCard(
                 isCompleted = isCompleted,
                 isExpired = isExpired,
                 isCancelled = isCancelled,
+                isLongTerm = isLongTerm,
                 tick = tick,
             )
 
-            // ── 进度条（仅活跃任务） ──
-            if (!isCompleted && !isExpired) {
+            // ── 进度条（仅短期活跃任务） ──
+            if (!isCompleted && !isExpired && !isLongTerm) {
                 LinearProgressIndicator(
                     progress = { progress },
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
@@ -185,6 +192,7 @@ private fun TimeInfoRow(
     isCompleted: Boolean,
     isExpired: Boolean,
     isCancelled: Boolean,
+    isLongTerm: Boolean,
     tick: Long,
 ) {
     Column {
@@ -217,6 +225,14 @@ private fun TimeInfoRow(
                     text = "超时: ${formatDateTime(expiredAt)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = Expired,
+                )
+            }
+            isLongTerm -> {
+                val elapsedMs = System.currentTimeMillis() - task.createdAt
+                Text(
+                    text = "已持续 ${formatDuration(elapsedMs)}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Primary,
                 )
             }
             else -> {

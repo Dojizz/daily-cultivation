@@ -11,6 +11,10 @@ class JournalRepository(private val dao: JournalDao) {
         return dao.observeByDate(JournalEntity.todayDate())
     }
 
+    fun observeByDate(date: Long): Flow<JournalEntity?> {
+        return dao.observeByDate(date)
+    }
+
     /** 获取所有日记（按日期倒序） */
     fun observeAll(): Flow<List<JournalEntity>> = dao.observeAll()
 

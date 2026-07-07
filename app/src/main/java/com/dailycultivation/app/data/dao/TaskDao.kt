@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.dailycultivation.app.data.entity.TaskEntity
 import com.dailycultivation.app.data.entity.TaskStatus
+import com.dailycultivation.app.data.entity.TaskType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -20,6 +21,9 @@ interface TaskDao {
 
     @Query("SELECT * FROM tasks WHERE status = :status ORDER BY createdAt DESC")
     fun observeByStatus(status: TaskStatus): Flow<List<TaskEntity>>
+
+    @Query("SELECT * FROM tasks WHERE status = :status AND taskType = :type ORDER BY createdAt DESC")
+    fun observeByStatusAndType(status: TaskStatus, type: TaskType): Flow<List<TaskEntity>>
 
     @Query("SELECT * FROM tasks ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<TaskEntity>>

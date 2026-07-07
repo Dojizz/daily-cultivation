@@ -13,6 +13,7 @@ data class TaskEntity(
     val status: TaskStatus = TaskStatus.PENDING,
     val completedAt: Long? = null,
     val cancelledAt: Long? = null,
+    val taskType: TaskType = TaskType.SHORT_TERM,
 )
 
 enum class TaskStatus {
@@ -20,6 +21,13 @@ enum class TaskStatus {
     COMPLETED,
     EXPIRED,
     CANCELLED,
+}
+
+enum class TaskType {
+    /** 短期任务：72 小时截止，自动过期 */
+    SHORT_TERM,
+    /** 长期任务：无截止时间，挂在列表里提醒自己 */
+    LONG_TERM,
 }
 
 /** 72 小时的毫秒数 */

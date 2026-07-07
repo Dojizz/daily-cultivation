@@ -23,12 +23,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import com.dailycultivation.app.data.entity.JournalEntity
 import com.dailycultivation.app.data.entity.PracticeEntity
 import com.dailycultivation.app.data.entity.PracticeType
@@ -55,11 +58,12 @@ enum class Tab(val label: String) {
 @Composable
 fun MainScreen(
     // 任务
-    activeTasks: List<TaskWithDeadline>,
+    activeShortTasks: List<TaskWithDeadline>,
+    activeLongTasks: List<TaskWithDeadline>,
     completedTasks: List<com.dailycultivation.app.data.entity.TaskEntity>,
     expiredTasks: List<TaskWithDeadline>,
     cancelledTasks: List<com.dailycultivation.app.data.entity.TaskEntity>,
-    onAddTask: (String, String) -> Unit,
+    onAddTask: (String, String, com.dailycultivation.app.data.entity.TaskType) -> Unit,
     onCompleteTask: (Long) -> Unit,
     onCancelTask: (Long) -> Unit,
     onRestartTask: (Long) -> Unit,
@@ -92,6 +96,25 @@ fun MainScreen(
     var showSettingsMenu by rememberSaveable { mutableStateOf(false) }
     var showBackupDialog by rememberSaveable { mutableStateOf(false) }
     var editingJournal by rememberSaveable { mutableStateOf<JournalEntity?>(null) }
+
+    // 折叠状态：跨重启保持
+    val prefs = LocalContext.current.getSharedPreferences("task_sections", android.content.Context.MODE_PRIVATE)
+    @Composable fun prefBool(key: String) = remember { mutableStateOf(prefs.getBoolean(key, true)) }
+    var showShort by prefBool("showShort")
+    var showLong by prefBool("showLong")
+    var showCompleted by prefBool("showCompleted")
+    var showCancelled by prefBool("showCancelled")
+    var showExpired by prefBool("showExpired")
+    SideEffect {
+        prefs.edit()
+            .putBoolean("showShort", showShort)
+            .putBoolean("showLong", showLong)
+            .putBoolean("showCompleted", showCompleted)
+            .putBoolean("showCancelled", showCancelled)
+            .putBoolean("showExpired", showExpired)
+            .apply()
+    }
+
     val tab = Tab.entries[selectedTab]
 
     // 日记编辑器全屏模式
@@ -192,7 +215,7 @@ fun MainScreen(
         },
         floatingActionButton = {
             when (tab) {
-                Tab.TASKS -> AddTaskFab { title, desc -> onAddTask(title, desc) }
+                Tab.TASKS -> AddTaskFab { title, desc, type -> onAddTask(title, desc, type) }
                 Tab.PRACTICE -> AddPracticeFab { name, desc, type -> onAddPractice(name, desc, type) }
                 Tab.JOURNAL -> AddJournalFab {
                     editingJournal = todayJournal
@@ -204,7 +227,8 @@ fun MainScreen(
         Box(modifier = Modifier.padding(padding)) {
             when (tab) {
                 Tab.TASKS -> TaskContent(
-                    activeTasks = activeTasks,
+                    activeShortTasks = activeShortTasks,
+                    activeLongTasks = activeLongTasks,
                     completedTasks = completedTasks,
                     expiredTasks = expiredTasks,
                     cancelledTasks = cancelledTasks,
@@ -212,6 +236,11 @@ fun MainScreen(
                     onCancelTask = onCancelTask,
                     onRestartTask = onRestartTask,
                     onDeleteTask = onDeleteTask,
+                    showShort = showShort, onToggleShort = { showShort = !showShort },
+                    showLong = showLong, onToggleLong = { showLong = !showLong },
+                    showCompleted = showCompleted, onToggleCompleted = { showCompleted = !showCompleted },
+                    showCancelled = showCancelled, onToggleCancelled = { showCancelled = !showCancelled },
+                    showExpired = showExpired, onToggleExpired = { showExpired = !showExpired },
                 )
                 Tab.PRACTICE -> PracticeContent(
                     habits = habits,
@@ -266,7 +295,7 @@ private fun AddJournalFab(onClick: () -> Unit) {
 }
 
 @Composable
-private fun AddTaskFab(onAddTask: (String, String) -> Unit) {
+private fun AddTaskFab(onAddTask: (String, String, com.dailycultivation.app.data.entity.TaskType) -> Unit) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
 
     FloatingActionButton(
@@ -280,8 +309,8 @@ private fun AddTaskFab(onAddTask: (String, String) -> Unit) {
     if (showDialog) {
         com.dailycultivation.app.ui.task.AddTaskDialog(
             onDismiss = { showDialog = false },
-            onConfirm = { title, desc ->
-                onAddTask(title, desc)
+            onConfirm = { title, desc, type ->
+                onAddTask(title, desc, type)
                 showDialog = false
             },
         )

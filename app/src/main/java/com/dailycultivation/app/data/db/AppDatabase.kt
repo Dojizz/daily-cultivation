@@ -22,10 +22,10 @@ import com.dailycultivation.app.data.entity.TaskEntity
         PracticeRecordEntity::class,
         JournalEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
-@TypeConverters(PracticeTypeConverter::class)
+@TypeConverters(PracticeTypeConverter::class, TaskTypeConverter::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun taskDao(): TaskDao
@@ -49,7 +49,7 @@ abstract class AppDatabase : RoomDatabase() {
                         AppDatabase::class.java,
                         "daily_cultivation.db"
                     )
-                        .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
+                        .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                         // 禁止自动删库：缺少 Migration 时直接崩溃，强迫开发者写 Migration
                         .addCallback(object : Callback() {
                             override fun onOpen(db: SupportSQLiteDatabase) {
@@ -79,6 +79,10 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_4_5 = Migration(4, 5) { db ->
             db.execSQL("ALTER TABLE tasks ADD COLUMN cancelledAt INTEGER")
+        }
+
+        private val MIGRATION_5_6 = Migration(5, 6) { db ->
+            db.execSQL("ALTER TABLE tasks ADD COLUMN taskType TEXT NOT NULL DEFAULT 'SHORT_TERM'")
         }
     }
 }

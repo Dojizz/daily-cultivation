@@ -4,18 +4,26 @@ import com.dailycultivation.app.data.dao.TaskDao
 import com.dailycultivation.app.data.entity.DEADLINE_DURATION_MS
 import com.dailycultivation.app.data.entity.TaskEntity
 import com.dailycultivation.app.data.entity.TaskStatus
+import com.dailycultivation.app.data.entity.TaskType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class TaskRepository(private val dao: TaskDao) {
 
-    /** 获取活跃任务（未过期 + 未完成），按剩余时间升序排列 */
-    fun observeActiveTasks(): Flow<List<TaskWithDeadline>> {
-        return dao.observeByStatus(TaskStatus.PENDING).map { list ->
+    /** 短期活跃任务（72h 截止），按剩余时间升序 */
+    fun observeActiveShortTermTasks(): Flow<List<TaskWithDeadline>> {
+        return dao.observeByStatusAndType(TaskStatus.PENDING, TaskType.SHORT_TERM).map { list ->
             val now = System.currentTimeMillis()
             list
                 .map { TaskWithDeadline(it, it.createdAt + DEADLINE_DURATION_MS - now) }
                 .sortedBy { it.remainingMs }
+        }
+    }
+
+    /** 长期活跃任务（无截止时间），按创建时间倒序 */
+    fun observeActiveLongTermTasks(): Flow<List<TaskWithDeadline>> {
+        return dao.observeByStatusAndType(TaskStatus.PENDING, TaskType.LONG_TERM).map { list ->
+            list.map { TaskWithDeadline(it, Long.MAX_VALUE) }
         }
     }
 
@@ -37,10 +45,15 @@ class TaskRepository(private val dao: TaskDao) {
         return dao.observeByStatus(TaskStatus.CANCELLED)
     }
 
-    suspend fun addTask(title: String, description: String = ""): Long {
+    suspend fun addTask(
+        title: String,
+        description: String = "",
+        taskType: TaskType = TaskType.SHORT_TERM,
+    ): Long {
         val task = TaskEntity(
             title = title,
             description = description,
+            taskType = taskType,
         )
         return dao.insert(task)
     }
@@ -53,7 +66,7 @@ class TaskRepository(private val dao: TaskDao) {
         dao.updateStatus(id, TaskStatus.EXPIRED)
     }
 
-    /** 重启过期/终止任务：重置创建时间，改回 pending */
+    /** 重启过期/终止任务 */
     suspend fun restartTask(id: Long) {
         val task = dao.getById(id) ?: return
         dao.update(
@@ -73,22 +86,6 @@ class TaskRepository(private val dao: TaskDao) {
 
     suspend fun deleteTask(id: Long) {
         dao.delete(id)
-    }
-
-    /** 检查并标记所有已过期的 pending 任务 */
-    suspend fun expireOverdueTasks() {
-        val pending = dao.observeByStatus(TaskStatus.PENDING)
-        // 不能直接 collect flow，这里改用一次性查询
-    }
-
-    /** 直接获取所有 pending 任务用于批量过期检查 */
-    suspend fun checkAndExpireOverdue() {
-        val now = System.currentTimeMillis()
-        // 这里通过 Repository 方法间接处理，实际由 ViewModel 驱动
-        dao.observeByStatus(TaskStatus.PENDING).collect { tasks ->
-            tasks.filter { it.createdAt + DEADLINE_DURATION_MS < now }
-                .forEach { dao.updateStatus(it.id, TaskStatus.EXPIRED) }
-        }
     }
 }
 

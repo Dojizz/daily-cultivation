@@ -25,7 +25,8 @@ class MainActivity : ComponentActivity() {
                 val journalVM: JournalViewModel = viewModel()
                 val updateVM: UpdateViewModel = viewModel()
 
-                val activeTasks by taskVM.activeTasks.collectAsStateWithLifecycle()
+                val activeShortTasks by taskVM.activeShortTasks.collectAsStateWithLifecycle()
+                val activeLongTasks by taskVM.activeLongTasks.collectAsStateWithLifecycle()
                 val completedTasks by taskVM.completedTasks.collectAsStateWithLifecycle()
                 val expiredTasks by taskVM.expiredTasks.collectAsStateWithLifecycle()
                 val cancelledTasks by taskVM.cancelledTasks.collectAsStateWithLifecycle()
@@ -37,11 +38,12 @@ class MainActivity : ComponentActivity() {
                 val updateState by updateVM.uiState.collectAsStateWithLifecycle()
 
                 MainScreen(
-                    activeTasks = activeTasks,
+                    activeShortTasks = activeShortTasks,
+                    activeLongTasks = activeLongTasks,
                     completedTasks = completedTasks,
                     expiredTasks = expiredTasks,
                     cancelledTasks = cancelledTasks,
-                    onAddTask = taskVM::addTask,
+                    onAddTask = { title, desc, type -> taskVM.addTask(title, desc, type) },
                     onCompleteTask = taskVM::completeTask,
                     onCancelTask = taskVM::cancelTask,
                     onRestartTask = taskVM::restartTask,
