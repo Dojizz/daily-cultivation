@@ -115,6 +115,10 @@ class PracticeRepository(private val dao: PracticeDao) {
         return dao.observeRecordsForDate(date)
     }
 
+    fun observeRecordsInRange(startDate: Long, endDate: Long): Flow<List<PracticeRecordEntity>> {
+        return dao.observeRecordsInRange(startDate, endDate)
+    }
+
     companion object {
         /** 今天零点时间戳。凌晨 3 点前算前一天，与日记规则一致。 */
         fun getTodayStartMs(): Long {

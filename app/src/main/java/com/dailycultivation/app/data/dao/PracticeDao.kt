@@ -52,4 +52,7 @@ interface PracticeDao {
 
     @Query("SELECT * FROM practice_records WHERE date = :date")
     fun observeRecordsForDate(date: Long): Flow<List<PracticeRecordEntity>>
+
+    @Query("SELECT * FROM practice_records WHERE date >= :startDate AND date < :endDate")
+    fun observeRecordsInRange(startDate: Long, endDate: Long): Flow<List<PracticeRecordEntity>>
 }

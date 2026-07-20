@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -115,8 +116,43 @@ class PracticeViewModel(application: Application) : AndroidViewModel(application
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /** 回顾页按当前选中月份读取记录，避免随数据增长而一次加载全部历史。 */
+    private val reviewMonthStart = MutableStateFlow(monthStartMs(Calendar.getInstance()))
+
+    data class ReviewState(
+        val monthStart: Long = monthStartMs(Calendar.getInstance()),
+        val practices: List<PracticeEntity> = emptyList(),
+        val records: List<PracticeRecordEntity> = emptyList(),
+    )
+
+    val reviewState: StateFlow<ReviewState> = combine(
+        reviewMonthStart.flatMapLatest { start ->
+            repository.observeRecordsInRange(start, nextMonthStartMs(start))
+        },
+        repository.observeAllPractices(),
+        reviewMonthStart,
+    ) { records, practices, monthStart ->
+        ReviewState(monthStart = monthStart, practices = practices, records = records)
+    }.catch { e ->
+        Log.e(TAG, "reviewState Flow 崩溃", e)
+        emit(ReviewState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ReviewState())
+
     companion object {
         private const val TAG = "PracticeViewModel"
+
+        private fun monthStartMs(calendar: Calendar): Long = calendar.apply {
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        private fun nextMonthStartMs(monthStart: Long): Long = Calendar.getInstance().apply {
+            timeInMillis = monthStart
+            add(Calendar.MONTH, 1)
+        }.let(::monthStartMs)
     }
 
     // ── 操作 ──
@@ -160,4 +196,13 @@ class PracticeViewModel(application: Application) : AndroidViewModel(application
             repository.updatePractice(practice.copy(isActive = isActive))
         }
     }
+
+    fun changeReviewMonth(offset: Int) {
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = reviewMonthStart.value
+            add(Calendar.MONTH, offset)
+        }
+        reviewMonthStart.value = monthStartMs(calendar)
+    }
+
 }

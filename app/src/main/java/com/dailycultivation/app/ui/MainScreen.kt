@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.SelfImprovement
@@ -42,6 +43,7 @@ import com.dailycultivation.app.ui.home.TaskContent
 import com.dailycultivation.app.ui.journal.JournalContent
 import com.dailycultivation.app.ui.journal.JournalEditorScreen
 import com.dailycultivation.app.ui.practice.PracticeContent
+import com.dailycultivation.app.ui.review.ReviewContent
 import com.dailycultivation.app.ui.theme.Primary
 import com.dailycultivation.app.ui.theme.Tertiary
 import com.dailycultivation.app.ui.update.UpdateDialog
@@ -51,6 +53,7 @@ import com.dailycultivation.app.viewmodel.UpdateUiState
 enum class Tab(val label: String) {
     TASKS("任务"),
     PRACTICE("日课"),
+    REVIEW("回顾"),
     JOURNAL("日记"),
 }
 
@@ -78,6 +81,8 @@ fun MainScreen(
     onEditPractice: (PracticeEntity) -> Unit,
     onToggleActive: (Long, Boolean) -> Unit,
     onDeletePractice: (Long) -> Unit,
+    reviewState: PracticeViewModel.ReviewState,
+    onChangeReviewMonth: (Int) -> Unit,
     // 日记
     todayJournal: JournalEntity?,
     allJournals: List<JournalEntity>,
@@ -203,6 +208,17 @@ fun MainScreen(
                 NavigationBarItem(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
+                    icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
+                    label = { Text("回顾") },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Primary,
+                        selectedTextColor = Primary,
+                        indicatorColor = Primary.copy(alpha = 0.12f),
+                    ),
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 3,
+                    onClick = { selectedTab = 3 },
                     icon = { Icon(Icons.Default.Edit, contentDescription = null) },
                     label = { Text("日记") },
                     colors = NavigationBarItemDefaults.colors(
@@ -217,6 +233,7 @@ fun MainScreen(
             when (tab) {
                 Tab.TASKS -> AddTaskFab { title, desc, type -> onAddTask(title, desc, type) }
                 Tab.PRACTICE -> AddPracticeFab { name, desc, type -> onAddPractice(name, desc, type) }
+                Tab.REVIEW -> Unit
                 Tab.JOURNAL -> AddJournalFab {
                     editingJournal = todayJournal
                         ?: JournalEntity(date = JournalEntity.todayDate())
@@ -252,6 +269,10 @@ fun MainScreen(
                     onEditPractice = onEditPractice,
                     onToggleActive = onToggleActive,
                     onDeletePractice = onDeletePractice,
+                )
+                Tab.REVIEW -> ReviewContent(
+                    state = reviewState,
+                    onChangeMonth = onChangeReviewMonth,
                 )
                 Tab.JOURNAL -> JournalContent(
                     todayJournal = todayJournal,

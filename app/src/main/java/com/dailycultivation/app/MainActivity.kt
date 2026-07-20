@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
                 val todayState by practiceVM.todayState.collectAsStateWithLifecycle()
                 val habits by practiceVM.habits.collectAsStateWithLifecycle()
                 val allPractices by practiceVM.allPractices.collectAsStateWithLifecycle()
+                val reviewState by practiceVM.reviewState.collectAsStateWithLifecycle()
                 val todayJournal by journalVM.todayJournal.collectAsStateWithLifecycle()
                 val allJournals by journalVM.allJournals.collectAsStateWithLifecycle()
                 val updateState by updateVM.uiState.collectAsStateWithLifecycle()
@@ -57,6 +58,8 @@ class MainActivity : ComponentActivity() {
                     onEditPractice = practiceVM::updatePractice,
                     onToggleActive = practiceVM::toggleActive,
                     onDeletePractice = practiceVM::deletePractice,
+                    reviewState = reviewState,
+                    onChangeReviewMonth = practiceVM::changeReviewMonth,
                     todayJournal = todayJournal,
                     allJournals = allJournals,
                     onSaveJournal = journalVM::saveToday,
